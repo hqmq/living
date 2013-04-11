@@ -1,0 +1,29 @@
+<h1>Listing sses</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Data</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @sses.each do |ss| %>
+    <tr>
+      <td><%= ss.key %></td>
+      <td><%= ss.data %></td>
+      <td><%= link_to 'Show', ss %></td>
+      <td><%= link_to 'Edit', edit_ss_path(ss) %></td>
+      <td><%= link_to 'Destroy', ss, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br />
+
+<%= link_to 'New Sse', new_ss_path %>
