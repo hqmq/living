@@ -1,12 +1,17 @@
-class Sse < ActiveRecord::Base
-  def data=(val)
-    unless val.is_a?(String)
-      val = val.to_json
-    end
-    super(val)
+require 'json'
+class SSE
+  def initialize io
+    @io = io
   end
 
-  def to_sse_string
-    "id: #{id}\nevent: #{event}\ndata: #{data}\n\n"
+  def write object, options = {}
+    options.each do |k,v|
+      @io.write "#{k}: #{v}\n"
+    end
+    @io.write "data: #{JSON.dump(object)}\n\n"
+  end
+
+  def close
+    @io.close
   end
 end

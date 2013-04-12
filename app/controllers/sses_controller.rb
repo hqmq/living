@@ -8,16 +8,32 @@ class SsesController < ApplicationController
     last_event_id = 0
     key = params[:key]
     response.headers['Content-Type'] = 'text/event-stream'
+    puts "subscribing to #{key}"
     begin
-      loop do
-        response.stream.write("event: ping\n\n")
-        sleep 3
+      sse = SSE.new(response.stream)
+      ticker = Thread.new do
+        sse.write 0, event: 'ack'
+        sleep 5
       end
-      
+
+      r = Redis.new
+      streamer = Thread.new do
+        r.subscribe(key) do |on|
+          on.message do |channel, message|
+            response.stream.write(message)
+          end
+        end
+      end
+
+      ticker.join
+      streamer.join
     rescue IOError
       puts "ioerror:: #{$!}"
     ensure
-      response.stream.close
+      Thread.kill(ticker) if ticker
+      Thread.kill(streamer) if streamer
+      sse.close
+      r.quite
     end
   end
 
@@ -28,7 +44,6 @@ class SsesController < ApplicationController
 
   # GET /sses/new
   def new
-    @ss = Sse.new
   end
 
   # GET /sses/1/edit
@@ -38,17 +53,10 @@ class SsesController < ApplicationController
   # POST /sses
   # POST /sses.json
   def create
-    @ss = Sse.new(ss_params)
-
-    respond_to do |format|
-      if @ss.save
-        format.html { redirect_to @ss, notice: 'Sse was successfully created.' }
-        format.json { render action: 'show', status: :created, location: @ss }
-      else
-        format.html { render action: 'new' }
-        format.json { render json: @ss.errors, status: :unprocessable_entity }
-      end
-    end
+    r = Redis.new
+    r.publish(params[:key], "event: alert\ndata: #{params[:msg]}\n\n")
+    r.quit
+    render json: {ok: 1}
   end
 
   # PATCH/PUT /sses/1

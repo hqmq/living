@@ -1,5 +1,16 @@
-<h1>New ss</h1>
+<h1>Listener/Publisher</h1>
 
-<%= render 'form' %>
-
-<%= link_to 'Back', sses_path %>
+<script type="text/javascript">
+$(function(){
+  es = new EventSource("/sses?key=page")
+  es.onopen = function(){
+    alert("listening");
+  };
+  es.onerror = function(){
+    alert('error...wah wah');
+  };
+  es.addEventListener('alert', function(ev){
+    alert('received alert: '+ ev.data);
+  }, false);
+});
+</script>
